@@ -57,7 +57,7 @@ interface Props {
     ruleSettings: RuleSetting[];
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const createModalOpen = ref(false);
 const editModalOpen = ref(false);

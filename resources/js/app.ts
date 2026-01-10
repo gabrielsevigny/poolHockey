@@ -14,7 +14,7 @@ configureEcho({
 // Initialize Laravel Echo for real-time broadcasting
 try {
     await import('./echo');
-} catch (error) {
+} catch {
     console.warn('Laravel Echo not configured. Real-time features disabled.');
 }
 

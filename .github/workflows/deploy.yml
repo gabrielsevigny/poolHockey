@@ -1,0 +1,60 @@
+name: Deploy Laravel (prod)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install deps + build assets
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+          npm ci
+          npm run build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        env:
+          APP_DIR: ${{ secrets.APP_DIR }}
+        run: |
+          RELEASE="${GITHUB_SHA}"
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ${APP_DIR}/releases/${RELEASE}"
+          rsync -az \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "node_modules" \
+            --exclude "storage" \
+            --exclude ".env" \
+            ./ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${APP_DIR}/releases/${RELEASE}/
+
+      - name: Activate release (migrate/cache/symlink)
+        env:
+          APP_DIR: ${{ secrets.APP_DIR }}
+        run: |
+          RELEASE="${GITHUB_SHA}"
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "sudo /usr/local/bin/deploy_pool.sh ${APP_DIR}/releases/${RELEASE}"

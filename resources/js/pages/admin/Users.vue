@@ -42,7 +42,7 @@ interface Props {
     is_super_admin: boolean;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const handleRoleChange = (user: User, role: string) => {
     const form = useForm({

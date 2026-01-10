@@ -64,7 +64,7 @@ const statusOrder: Record<Pool['status'], number> = {
 
 // Filtrer et trier les données
 const data = computed(() => {
-    return props.pools.sort(
+    return [...props.pools].sort(
         (a, b) => statusOrder[a.status] - statusOrder[b.status],
     );
 });
