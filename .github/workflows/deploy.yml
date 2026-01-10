@@ -4,9 +4,14 @@ on:
   push:
     branches: [ "main" ]
 
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -30,31 +35,41 @@ jobs:
           npm run build
 
       - name: Setup SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - name: Upload release
         env:
           APP_DIR: ${{ secrets.APP_DIR }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          RELEASE: ${{ github.sha }}
         run: |
-          RELEASE="${GITHUB_SHA}"
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ${APP_DIR}/releases/${RELEASE}"
-          rsync -az \
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes "$SSH_USER@$SSH_HOST" "mkdir -p '$APP_DIR/releases/$RELEASE'"
+
+          rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes" \
             --exclude ".git" \
             --exclude ".github" \
             --exclude "node_modules" \
             --exclude "storage" \
             --exclude ".env" \
+            --exclude ".DS_Store" \
+            --exclude "tests" \
             ./ \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${APP_DIR}/releases/${RELEASE}/
+            "$SSH_USER@$SSH_HOST:$APP_DIR/releases/$RELEASE/"
 
       - name: Activate release (migrate/cache/symlink)
         env:
           APP_DIR: ${{ secrets.APP_DIR }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          RELEASE: ${{ github.sha }}
         run: |
-          RELEASE="${GITHUB_SHA}"
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "sudo /usr/local/bin/deploy_pool.sh ${APP_DIR}/releases/${RELEASE}"
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
+            "sudo -n /usr/local/bin/deploy_pool.sh '$APP_DIR/releases/$RELEASE'"
