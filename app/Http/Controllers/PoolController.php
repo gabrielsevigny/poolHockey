@@ -12,17 +12,6 @@ use Illuminate\Support\Facades\Redirect;
 class PoolController extends Controller
 {
     /**
-     * Get data needed for pool creation.
-     */
-    public function create(): array
-    {
-        return [
-            'ruleSettings' => RuleSetting::all(),
-            'users' => User::select('id', 'name', 'email')->get(),
-        ];
-    }
-
-    /**
      * Store a newly created pool in storage.
      */
     public function store(Request $request): RedirectResponse
@@ -42,16 +31,12 @@ class PoolController extends Controller
             'custom_rules.player_limits.by_position' => ['nullable', 'array'],
             'custom_rules.player_limits.by_position.*.min' => ['nullable', 'integer', 'min:0', 'max:20'],
             'custom_rules.player_limits.by_position.*.max' => ['nullable', 'integer', 'min:0', 'max:20'],
-            'user_ids' => ['required', 'array', 'min:1'],
-            'user_ids.*' => ['exists:users,id'],
         ], [
             'name.required' => 'Le nom du pool est requis.',
             'start_date.required' => 'La date de début est requise.',
             'end_date.required' => 'La date de fin est requise.',
             'end_date.after' => 'La date de fin doit être après la date de début.',
             'rule_setting_id.exists' => 'Le règlement sélectionné n\'existe pas.',
-            'user_ids.required' => 'Au moins un participant est requis.',
-            'user_ids.min' => 'Au moins un participant est requis.',
             'custom_rules.scoring_rules.min' => 'Au moins une règle de pointage est requise.',
         ]);
 
@@ -89,7 +74,8 @@ class PoolController extends Controller
         // Calculate and update status based on dates
         $pool->updateStatus();
 
-        $pool->users()->attach($validated['user_ids']);
+        // Automatically add the pool owner as a participant
+        $pool->users()->attach($request->user()->id);
 
         return Redirect::route('dashboard');
     }
@@ -110,5 +96,41 @@ class PoolController extends Controller
         ]);
 
         return Redirect::back();
+    }
+
+    /**
+     * Remove a participant from the pool.
+     */
+    public function removeParticipant(Request $request, Pool $pool, User $user): RedirectResponse
+    {
+        // Verify the current user is the pool admin (owner or superAdmin)
+        $currentUser = $request->user();
+        $isPoolAdmin = $currentUser->hasRole('superAdmin') || $pool->owner_id === $currentUser->id;
+
+        if (! $isPoolAdmin) {
+            abort(403, 'Vous n\'avez pas la permission de retirer des participants de ce pool.');
+        }
+
+        // Prevent removing the pool owner
+        if ($user->id === $pool->owner_id) {
+            return Redirect::back()->withErrors([
+                'participant' => 'Le propriétaire du pool ne peut pas être retiré.',
+            ]);
+        }
+
+        // Verify the user is actually a participant
+        if (! $pool->users->contains($user->id)) {
+            return Redirect::back()->withErrors([
+                'participant' => 'Cet utilisateur ne fait pas partie de ce pool.',
+            ]);
+        }
+
+        // Delete all players selected by this participant
+        $pool->poolPlayers()->where('user_id', $user->id)->delete();
+
+        // Remove the participant from the pool
+        $pool->users()->detach($user->id);
+
+        return Redirect::back()->with('success', 'Le participant a été retiré du pool avec succès.');
     }
 }

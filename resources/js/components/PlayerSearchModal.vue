@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import axios from 'axios';
@@ -68,12 +62,9 @@ const performSearch = async (query: string) => {
     isSearching.value = true;
 
     try {
-        const response = await axios.get(
-            `/pools/${props.poolId}/players/search`,
-            {
-                params: { query },
-            },
-        );
+        const response = await axios.get(`/pools/${props.poolId}/players/search`, {
+            params: { query },
+        });
 
         searchResults.value = response.data.data;
     } catch (error) {
@@ -108,11 +99,7 @@ const handleOpenChange = (value: boolean) => {
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel(`pool.${props.poolId}`)
-            .listen('.player.selected', (event: {
-                nhl_player_id: number;
-                player_name: string;
-                selected_by: string;
-            }) => {
+            .listen('.player.selected', (event: { nhl_player_id: number; player_name: string; selected_by: string }) => {
                 // Mark player as unavailable in search results
                 searchResults.value = searchResults.value.map((player) => {
                     if (player.id === event.nhl_player_id) {
@@ -153,35 +140,19 @@ onUnmounted(() => {
         <DialogContent class="max-h-[80vh] sm:max-w-[700px]">
             <DialogHeader>
                 <DialogTitle>Rechercher un joueur</DialogTitle>
-                <DialogDescription>
-                    Recherchez et sélectionnez des joueurs de la NHL pour votre
-                    équipe.
-                </DialogDescription>
+                <DialogDescription> Recherchez et sélectionnez des joueurs de la NHL pour votre équipe. </DialogDescription>
             </DialogHeader>
 
             <div class="space-y-4">
                 <div class="relative">
-                    <Search
-                        class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                    />
-                    <Input
-                        v-model="searchQuery"
-                        placeholder="Rechercher par nom de joueur..."
-                        class="pl-10"
-                    />
+                    <Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="searchQuery" placeholder="Rechercher par nom de joueur..." class="pl-10" />
                 </div>
 
                 <div class="max-h-[400px] space-y-2 overflow-y-auto">
                     <!-- Loading state -->
-                    <div
-                        v-if="isSearching && searchQuery.length >= 2"
-                        class="space-y-2"
-                    >
-                        <div
-                            v-for="i in 3"
-                            :key="i"
-                            class="flex items-center space-x-3 rounded-lg border p-3"
-                        >
+                    <div v-if="isSearching && searchQuery.length >= 2" class="space-y-2">
+                        <div v-for="i in 3" :key="i" class="flex items-center space-x-3 rounded-lg border p-3">
                             <Skeleton class="h-12 w-12 rounded-full" />
                             <div class="flex-1 space-y-2">
                                 <Skeleton class="h-4 w-[200px]" />
@@ -191,42 +162,17 @@ onUnmounted(() => {
                     </div>
 
                     <!-- No results -->
-                    <div
-                        v-else-if="
-                            !isSearching &&
-                            searchQuery.length >= 2 &&
-                            searchResults.length === 0
-                        "
-                        class="py-8 text-center text-muted-foreground"
-                    >
-                        Aucun joueur trouvé
-                    </div>
+                    <div v-else-if="!isSearching && searchQuery.length >= 2 && searchResults.length === 0" class="py-8 text-center text-muted-foreground">Aucun joueur trouvé</div>
 
                     <!-- Search results -->
-                    <template
-                        v-else-if="!isSearching && searchResults.length > 0"
-                    >
+                    <template v-else-if="!isSearching && searchResults.length > 0">
                         <div
                             v-for="player in searchResults"
                             :key="player.id"
-                            :class="[
-                                'flex items-center space-x-3 rounded-lg border p-3 transition-colors',
-                                player.is_available
-                                    ? 'cursor-pointer hover:bg-accent'
-                                    : 'cursor-not-allowed opacity-60',
-                            ]"
+                            :class="['flex items-center space-x-3 rounded-lg border p-3 transition-colors', player.is_available ? 'cursor-pointer hover:bg-accent' : 'cursor-not-allowed opacity-60']"
                             @click="handlePlayerClick(player)"
                         >
-                            <img
-                                :src="player.headshot_url"
-                                :alt="player.full_name"
-                                class="h-12 w-12 rounded-full bg-muted object-cover"
-                                @error="
-                                    (e) =>
-                                        ((e.target as HTMLImageElement).src =
-                                            '/favicon.svg')
-                                "
-                            />
+                            <img :src="player.headshot_url" :alt="player.full_name" class="h-12 w-12 rounded-full bg-muted object-cover" @error="(e) => ((e.target as HTMLImageElement).src = '/favicon.svg')" />
 
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
@@ -236,33 +182,15 @@ onUnmounted(() => {
                                     <Badge variant="secondary" class="text-xs">
                                         {{ player.position }}
                                     </Badge>
-                                    <Badge
-                                        v-if="!player.is_available"
-                                        variant="destructive"
-                                        class="text-xs"
-                                    >
-                                        Indisponible
-                                    </Badge>
+                                    <Badge v-if="!player.is_available" variant="destructive" class="text-xs"> Indisponible </Badge>
                                 </div>
-                                <div
-                                    class="mt-1 flex items-center gap-2 text-sm text-muted-foreground"
-                                >
+                                <div class="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                                     <span>{{ player.team_name }}</span>
                                     <span>•</span>
-                                    <span
-                                        >{{ player.games_in_pool }} matchs dans
-                                        ce pool</span
-                                    >
+                                    <span>{{ player.games_in_pool }} matchs dans ce pool</span>
                                 </div>
-                                <div
-                                    v-if="!player.is_available"
-                                    class="mt-1 text-xs text-destructive"
-                                >
-                                    Sélectionné par {{ player.selected_by }}
-                                </div>
-                                <div
-                                    class="mt-1 flex items-center gap-3 text-xs text-muted-foreground"
-                                >
+                                <div v-if="!player.is_available" class="mt-1 text-xs text-destructive">Sélectionné par {{ player.selected_by }}</div>
+                                <div class="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                                     <span>{{ player.points }} PTS</span>
                                     <span>{{ player.goals }} B</span>
                                     <span>{{ player.assists }} A</span>
@@ -270,24 +198,14 @@ onUnmounted(() => {
                                 </div>
                             </div>
 
-                            <Button
-                                v-if="player.is_available"
-                                variant="ghost"
-                                size="sm"
-                                @click.stop="emit('player-selected', player)"
-                            >
+                            <Button v-if="player.is_available" variant="ghost" size="sm" @click.stop="emit('player-selected', player)">
                                 <Info class="h-4 w-4" />
                             </Button>
                         </div>
                     </template>
 
                     <!-- Empty state -->
-                    <div
-                        v-else-if="searchQuery.length < 2"
-                        class="py-8 text-center text-muted-foreground"
-                    >
-                        Entrez au moins 2 caractères pour rechercher
-                    </div>
+                    <div v-else-if="searchQuery.length < 2" class="py-8 text-center text-muted-foreground">Entrez au moins 2 caractères pour rechercher</div>
                 </div>
             </div>
         </DialogContent>

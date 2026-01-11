@@ -43,11 +43,7 @@ const getPositionLabel = (position: string): string => {
         </CardHeader>
         <CardContent class="p-0">
             <div class="divide-y">
-                <div
-                    v-for="(scorer, index) in scorers"
-                    :key="scorer.id"
-                    class="flex items-center gap-4 p-4 transition-colors hover:bg-accent/50"
-                >
+                <div v-for="(scorer, index) in scorers" :key="scorer.id" class="flex items-center gap-4 p-4 transition-colors hover:bg-accent/50">
                     <!-- Rank -->
                     <div class="flex w-8 items-center justify-center">
                         <span
@@ -65,14 +61,8 @@ const getPositionLabel = (position: string): string => {
 
                     <!-- Player Photo -->
                     <Avatar class="h-16 w-16 border-2">
-                        <AvatarImage
-                            :src="scorer.headshot_url"
-                            :alt="scorer.full_name"
-                        />
-                        <AvatarFallback>
-                            {{ scorer.first_name.charAt(0)
-                            }}{{ scorer.last_name.charAt(0) }}
-                        </AvatarFallback>
+                        <AvatarImage :src="scorer.headshot_url" :alt="scorer.full_name" />
+                        <AvatarFallback> {{ scorer.first_name.charAt(0) }}{{ scorer.last_name.charAt(0) }} </AvatarFallback>
                     </Avatar>
 
                     <!-- Player Info -->
@@ -81,13 +71,9 @@ const getPositionLabel = (position: string): string => {
                             <h3 class="font-semibold">
                                 {{ scorer.full_name }}
                             </h3>
-                            <Badge variant="outline" class="text-xs">
-                                #{{ scorer.sweater_number }}
-                            </Badge>
+                            <Badge variant="outline" class="text-xs"> #{{ scorer.sweater_number }} </Badge>
                         </div>
-                        <div
-                            class="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{{ getPositionLabel(scorer.position) }}</span>
                             <span>•</span>
                             <span>{{ scorer.team_name }}</span>
@@ -97,32 +83,20 @@ const getPositionLabel = (position: string): string => {
                     <!-- Stats -->
                     <div class="flex gap-6 text-center">
                         <div class="flex flex-col">
-                            <span class="text-2xl font-bold">{{
-                                scorer.points
-                            }}</span>
-                            <span class="text-xs text-muted-foreground"
-                                >PTS</span
-                            >
+                            <span class="text-2xl font-bold">{{ scorer.points }}</span>
+                            <span class="text-xs text-muted-foreground">PTS</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-lg font-semibold">{{
-                                scorer.goals
-                            }}</span>
+                            <span class="text-lg font-semibold">{{ scorer.goals }}</span>
                             <span class="text-xs text-muted-foreground">B</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-lg font-semibold">{{
-                                scorer.assists
-                            }}</span>
+                            <span class="text-lg font-semibold">{{ scorer.assists }}</span>
                             <span class="text-xs text-muted-foreground">P</span>
                         </div>
                         <div class="flex flex-col">
-                            <span class="text-sm text-muted-foreground">{{
-                                scorer.games_played
-                            }}</span>
-                            <span class="text-xs text-muted-foreground"
-                                >PJ</span
-                            >
+                            <span class="text-sm text-muted-foreground">{{ scorer.games_played }}</span>
+                            <span class="text-xs text-muted-foreground">PJ</span>
                         </div>
                     </div>
                 </div>

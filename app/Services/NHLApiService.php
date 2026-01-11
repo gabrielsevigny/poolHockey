@@ -370,6 +370,17 @@ class NHLApiService
             $totalAssists = 0;
             $totalPoints = 0;
             $totalPlusMinus = 0;
+            $totalPim = 0; // Penalty minutes
+            $totalPpGoals = 0; // Power play goals
+            $totalPpPoints = 0; // Power play points
+            $totalShGoals = 0; // Short handed goals
+            $totalShPoints = 0; // Short handed points
+            $totalGwGoals = 0; // Game winning goals
+            $totalOtGoals = 0; // Overtime goals
+            $totalShots = 0; // Shots
+            $totalTimeOnIce = 0; // Time on ice in seconds
+            $totalFaceoffWins = 0; // Faceoff wins
+            $totalFaceoffs = 0; // Total faceoffs
             $gamesPlayed = count($data);
 
             foreach ($data as $game) {
@@ -377,7 +388,31 @@ class NHLApiService
                 $totalAssists += $game['assists'] ?? 0;
                 $totalPoints += $game['points'] ?? 0;
                 $totalPlusMinus += $game['plusMinus'] ?? 0;
+                $totalPim += $game['penaltyMinutes'] ?? 0;
+                $totalPpGoals += $game['ppGoals'] ?? 0;
+                $totalPpPoints += $game['ppPoints'] ?? 0;
+                $totalShGoals += $game['shGoals'] ?? 0;
+                $totalShPoints += $game['shPoints'] ?? 0;
+                $totalGwGoals += $game['gameWinningGoals'] ?? 0;
+                $totalOtGoals += $game['otGoals'] ?? 0;
+                $totalShots += $game['shots'] ?? 0;
+                $totalFaceoffWins += $game['faceoffWins'] ?? 0;
+                $totalFaceoffs += $game['faceoffs'] ?? 0;
+
+                // Time on ice is in format "MM:SS", convert to seconds
+                if (isset($game['toi'])) {
+                    $toi = $game['toi'];
+                    if (is_string($toi) && strpos($toi, ':') !== false) {
+                        $parts = explode(':', $toi);
+                        $totalTimeOnIce += (int) $parts[0] * 60 + (int) $parts[1];
+                    }
+                }
             }
+
+            // Calculate averages and percentages
+            $avgTimeOnIce = $gamesPlayed > 0 ? $totalTimeOnIce / $gamesPlayed : 0;
+            $shootingPct = $totalShots > 0 ? ($totalGoals / $totalShots) * 100 : 0;
+            $faceoffPct = $totalFaceoffs > 0 ? ($totalFaceoffWins / $totalFaceoffs) * 100 : 0;
 
             return [
                 'goals' => $totalGoals,
@@ -385,6 +420,91 @@ class NHLApiService
                 'points' => $totalPoints,
                 'games_played' => $gamesPlayed,
                 'plus_minus' => $totalPlusMinus,
+                'pim' => $totalPim,
+                'pp_goals' => $totalPpGoals,
+                'pp_points' => $totalPpPoints,
+                'sh_goals' => $totalShGoals,
+                'sh_points' => $totalShPoints,
+                'gw_goals' => $totalGwGoals,
+                'ot_goals' => $totalOtGoals,
+                'shots' => $totalShots,
+                'avg_toi' => $avgTimeOnIce, // in seconds
+                'shooting_pct' => $shootingPct,
+                'faceoff_pct' => $faceoffPct,
+            ];
+        });
+    }
+
+    /**
+     * Get goalie stats in date range.
+     */
+    public function getGoalieStatsInDateRange(int $playerId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "nhl_goalie_stats_{$playerId}_{$startDate}_{$endDate}";
+
+        return Cache::remember($cacheKey, now()->addMinute(), function () use ($playerId, $startDate, $endDate) {
+            $cayenneExp = sprintf(
+                'seasonId=%s and gameTypeId=2 and playerId=%d and gameDate>="%s" and gameDate<="%s"',
+                self::CURRENT_SEASON,
+                $playerId,
+                $startDate,
+                $endDate
+            );
+
+            $response = Http::get(self::BASE_URL.'/goalie/summary', [
+                'isAggregate' => 'false',
+                'isGame' => 'true',
+                'cayenneExp' => $cayenneExp,
+                'limit' => 100,
+            ]);
+
+            if (! $response->successful()) {
+                return [
+                    'wins' => 0,
+                    'losses' => 0,
+                    'shutouts' => 0,
+                    'saves' => 0,
+                    'goals_against' => 0,
+                    'games_played' => 0,
+                ];
+            }
+
+            $data = $response->json('data', []);
+
+            if (empty($data)) {
+                return [
+                    'wins' => 0,
+                    'losses' => 0,
+                    'shutouts' => 0,
+                    'saves' => 0,
+                    'goals_against' => 0,
+                    'games_played' => 0,
+                ];
+            }
+
+            // Aggregate stats from all games in the date range
+            $totalWins = 0;
+            $totalLosses = 0;
+            $totalShutouts = 0;
+            $totalSaves = 0;
+            $totalGoalsAgainst = 0;
+            $gamesPlayed = count($data);
+
+            foreach ($data as $game) {
+                $totalWins += $game['wins'] ?? 0;
+                $totalLosses += $game['losses'] ?? 0;
+                $totalShutouts += $game['shutouts'] ?? 0;
+                $totalSaves += $game['saves'] ?? 0;
+                $totalGoalsAgainst += $game['goalsAgainst'] ?? 0;
+            }
+
+            return [
+                'wins' => $totalWins,
+                'losses' => $totalLosses,
+                'shutouts' => $totalShutouts,
+                'saves' => $totalSaves,
+                'goals_against' => $totalGoalsAgainst,
+                'games_played' => $gamesPlayed,
             ];
         });
     }

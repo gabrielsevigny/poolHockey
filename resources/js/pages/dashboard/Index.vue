@@ -36,17 +36,11 @@ interface RuleSetting {
     points_per_overtime: number;
 }
 
-interface User {
-    id: number;
-    name: string;
-    email: string;
-}
-
 interface Props {
     pools: Pool[];
     topScorers: TopScorer[];
     ruleSettings: RuleSetting[];
-    users: User[];
+    canCreatePool: boolean;
 }
 
 defineProps<Props>();
@@ -69,7 +63,7 @@ const breadcrumbs: BreadcrumbItem[] = [
             <div class="relative min-h-[100vh] flex-1 md:min-h-min">
                 <div class="mb-6 flex items-center justify-between">
                     <h1 class="text-2xl font-semibold">Mes pools</h1>
-                    <Button @click="createPoolModalOpen = true">
+                    <Button v-if="canCreatePool" @click="createPoolModalOpen = true">
                         <Plus class="mr-2 h-4 w-4" />
                         Ajouter un pool
                     </Button>
@@ -78,10 +72,6 @@ const breadcrumbs: BreadcrumbItem[] = [
             </div>
         </div>
 
-        <CreatePoolModal
-            v-model:open="createPoolModalOpen"
-            :rule-settings="ruleSettings"
-            :users="users"
-        />
+        <CreatePoolModal v-if="canCreatePool" v-model:open="createPoolModalOpen" :rule-settings="ruleSettings" />
     </AppLayout>
 </template>

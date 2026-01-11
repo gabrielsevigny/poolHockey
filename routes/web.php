@@ -7,16 +7,39 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
     return Inertia::render('Welcome', [
         'canRegister' => Features::enabled(Features::registration()),
+        'canResetPassword' => Features::enabled(Features::resetPasswords()),
+        'status' => session('status'),
     ]);
 })->name('home');
 
 Route::get('dashboard', function (NHLApiService $nhlApi) {
-    $pools = Pool::with(['ruleSetting', 'users'])
-        ->withCount('users')
-        ->get()
-        ->map(function ($pool) {
+    $user = auth()->user();
+
+    // Filter pools based on user role
+    $poolsQuery = Pool::with(['ruleSetting', 'users'])
+        ->withCount('users');
+
+    if ($user->hasRole('superAdmin')) {
+        // SuperAdmin sees all pools
+        $poolsQuery = $poolsQuery;
+    } elseif ($user->hasRole('poolAdmin')) {
+        // PoolAdmin sees ONLY pools they own (created)
+        $poolsQuery = $poolsQuery->where('owner_id', $user->id);
+    } else {
+        // Participants only see pools they're in
+        $poolsQuery = $poolsQuery->whereHas('users', function ($q) use ($user) {
+            $q->where('users.id', $user->id);
+        });
+    }
+
+    $pools = $poolsQuery->get()
+        ->map(function ($pool) use ($user) {
             // Update status based on dates
             $pool->status = $pool->calculateStatus();
             $pool->save();
@@ -29,6 +52,7 @@ Route::get('dashboard', function (NHLApiService $nhlApi) {
                 'rule_setting' => $pool->ruleSetting?->name,
                 'start_date' => $pool->start_date?->format('Y-m-d'),
                 'end_date' => $pool->end_date?->format('Y-m-d'),
+                'is_owner' => $pool->owner_id === $user->id,
             ];
         });
 
@@ -36,7 +60,7 @@ Route::get('dashboard', function (NHLApiService $nhlApi) {
         'pools' => $pools,
         'topScorers' => $nhlApi->getTopScorers(5),
         'ruleSettings' => \App\Models\RuleSetting::all(),
-        'users' => \App\Models\User::select('id', 'name', 'email')->get(),
+        'canCreatePool' => $user->hasRole(['superAdmin', 'poolAdmin']),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -50,7 +74,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Complete pool selection
     Route::post('pools/{pool}/complete-selection', [App\Http\Controllers\PoolController::class, 'completeSelection'])->name('pools.complete-selection');
+
+    // Pool invitations (poolAdmin only)
+    Route::post('pools/{pool}/invitations', [App\Http\Controllers\PoolInvitationController::class, 'store'])->name('pools.invitations.store');
+    Route::get('pools/{pool}/invitations', [App\Http\Controllers\PoolInvitationController::class, 'index'])->name('pools.invitations.index');
+
+    // Pool participants management (poolAdmin only)
+    Route::delete('pools/{pool}/participants/{user}', [App\Http\Controllers\PoolController::class, 'removeParticipant'])->name('pools.participants.remove');
 });
+
+// Public invitation routes (no auth required for registration)
+Route::get('invitations/{token}', [App\Http\Controllers\PoolInvitationController::class, 'show'])->name('invitations.show');
+Route::post('invitations/{token}/accept', [App\Http\Controllers\PoolInvitationController::class, 'accept'])->name('invitations.accept');
 
 Route::get('pools/{pool}', function (Pool $pool, \App\Services\NHLApiService $nhlApi) {
     $pool->load(['ruleSetting', 'users', 'poolPlayers.user']);
@@ -73,7 +108,10 @@ Route::get('pools/{pool}', function (Pool $pool, \App\Services\NHLApiService $nh
     $poolStartDate = $pool->start_date->copy()->addDay()->format('Y-m-d');
     $poolEndDate = $pool->end_date->copy()->format('Y-m-d');
 
-    $selectedPlayers = $pool->poolPlayers->map(function ($poolPlayer) use ($nhlApi, $poolStartDate, $poolEndDate, $currentUser, $userStatus) {
+    // Get rule settings for point calculation
+    $ruleSetting = $pool->ruleSetting;
+
+    $selectedPlayers = $pool->poolPlayers->map(function ($poolPlayer) use ($nhlApi, $poolStartDate, $poolEndDate, $currentUser, $userStatus, $ruleSetting) {
         // Get stats for the pool date range only
         $stats = $nhlApi->getPlayerStatsInDateRange(
             $poolPlayer->nhl_player_id,
@@ -81,12 +119,41 @@ Route::get('pools/{pool}', function (Pool $pool, \App\Services\NHLApiService $nh
             $poolEndDate
         );
 
+        // Calculate points based on rule settings
+        $calculatedPoints = 0;
+
+        // For goalies, use goalie-specific stats
+        if ($poolPlayer->position === 'G') {
+            $goalieStats = $nhlApi->getGoalieStatsInDateRange(
+                $poolPlayer->nhl_player_id,
+                $poolStartDate,
+                $poolEndDate
+            );
+
+            $calculatedPoints += ($goalieStats['wins'] ?? 0) * ($ruleSetting->points_per_victory ?? 0);
+            $calculatedPoints += ($goalieStats['shutouts'] ?? 0) * ($ruleSetting->points_per_shutout ?? 0);
+
+            // Store goalie stats for display
+            $stats['goals'] = 0; // Goalies don't score goals
+            $stats['assists'] = 0; // Goalies don't get assists
+            $stats['wins'] = $goalieStats['wins'] ?? 0;
+            $stats['shutouts'] = $goalieStats['shutouts'] ?? 0;
+            $stats['games_played'] = $goalieStats['games_played'] ?? 0;
+        } else {
+            // For skaters, use goals and assists
+            $calculatedPoints += ($stats['goals'] ?? 0) * ($ruleSetting->points_per_goal ?? 0);
+            $calculatedPoints += ($stats['assists'] ?? 0) * ($ruleSetting->points_per_assist ?? 0);
+        }
+
         // Get games in pool duration (for reference)
         $gamesInPool = $nhlApi->getTeamGamesInDateRange(
             $poolPlayer->team_abbrev,
             $poolStartDate,
             $poolEndDate
         );
+
+        // Replace the NHL API points with our calculated points
+        $stats['points'] = $calculatedPoints;
 
         return [
             'id' => $poolPlayer->id,
@@ -128,6 +195,67 @@ Route::get('pools/{pool}', function (Pool $pool, \App\Services\NHLApiService $nh
         }
     }
 
+    // Calculate participant statistics
+    $participants = $pool->users->map(function ($user) use ($pool, $nhlApi, $poolStartDate, $poolEndDate, $ruleSetting) {
+        $userPlayers = $pool->poolPlayers()->where('user_id', $user->id)->get();
+
+        $totalGoals = 0;
+        $totalAssists = 0;
+        $totalPoints = 0;
+        $totalPlusMinus = 0;
+
+        foreach ($userPlayers as $poolPlayer) {
+            // Get stats for the pool date range for each player
+            $stats = $nhlApi->getPlayerStatsInDateRange(
+                $poolPlayer->nhl_player_id,
+                $poolStartDate,
+                $poolEndDate
+            );
+
+            // Calculate points based on rule settings
+            $playerPoints = 0;
+
+            // For goalies, use goalie-specific stats
+            if ($poolPlayer->position === 'G') {
+                $goalieStats = $nhlApi->getGoalieStatsInDateRange(
+                    $poolPlayer->nhl_player_id,
+                    $poolStartDate,
+                    $poolEndDate
+                );
+
+                $playerPoints += ($goalieStats['wins'] ?? 0) * ($ruleSetting->points_per_victory ?? 0);
+                $playerPoints += ($goalieStats['shutouts'] ?? 0) * ($ruleSetting->points_per_shutout ?? 0);
+                // Goalies don't contribute to goals/assists stats
+            } else {
+                // For skaters, use goals and assists
+                $totalGoals += $stats['goals'] ?? 0;
+                $totalAssists += $stats['assists'] ?? 0;
+                $totalPlusMinus += $stats['plus_minus'] ?? 0;
+
+                $playerPoints += ($stats['goals'] ?? 0) * ($ruleSetting->points_per_goal ?? 0);
+                $playerPoints += ($stats['assists'] ?? 0) * ($ruleSetting->points_per_assist ?? 0);
+            }
+
+            $totalPoints += $playerPoints;
+        }
+
+        $activePlayers = $userPlayers->count();
+        $injuredPlayers = 0; // TODO: Implement injury tracking
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'total_goals' => $totalGoals,
+            'total_assists' => $totalAssists,
+            'total_points' => $totalPoints,
+            'total_plus_minus' => $totalPlusMinus,
+            'active_players' => $activePlayers,
+            'injured_players' => $injuredPlayers,
+            'is_owner' => $pool->owner_id === $user->id,
+        ];
+    })->sortByDesc('total_points')->values();
+
     return Inertia::render('pools/Show', [
         'pool' => [
             'id' => $pool->id,
@@ -143,6 +271,7 @@ Route::get('pools/{pool}', function (Pool $pool, \App\Services\NHLApiService $nh
             'max_players_per_user' => $playerLimits['max_per_user'] ?? 20,
             'position_limits' => $playerLimits['by_position'] ?? null,
             'position_counts' => $positionCounts,
+            'participants' => $participants,
         ],
     ]);
 })->middleware(['auth', 'verified'])->name('pools.show');

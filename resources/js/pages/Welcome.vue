@@ -1,170 +1,141 @@
 <script setup lang="ts">
-import { dashboard, login, register } from '@/routes';
-import { Head, Link } from '@inertiajs/vue3';
+import InputError from '@/components/InputError.vue';
+import TextLink from '@/components/TextLink.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { store as loginStore } from '@/routes/login';
+import { request as passwordRequest } from '@/routes/password';
+import { store as registerStore } from '@/routes/register';
+import { Form, Head } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         canRegister: boolean;
+        canResetPassword: boolean;
+        status?: string;
     }>(),
     {
         canRegister: true,
+        canResetPassword: true,
     },
 );
+
+const isLogin = ref(true);
 </script>
 
 <template>
-    <Head title="Welcome">
-        <link rel="preconnect" href="https://rsms.me/" />
-        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-    </Head>
-    <div
-        class="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]"
-    >
-        <header
-            class="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl"
-        >
-            <nav class="flex items-center justify-end gap-4">
-                <Link
-                    v-if="$page.props.auth.user"
-                    :href="dashboard()"
-                    class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                >
-                    Dashboard
-                </Link>
-                <template v-else>
-                    <Link
-                        :href="login()"
-                        class="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
-                    >
-                        Log in
-                    </Link>
-                    <Link
-                        v-if="canRegister"
-                        :href="register()"
-                        class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                    >
-                        Register
-                    </Link>
-                </template>
-            </nav>
-        </header>
-        <div
-            class="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0"
-        >
-            <main
-                class="flex w-full max-w-[335px] flex-col-reverse overflow-hidden rounded-lg lg:max-w-4xl lg:flex-row"
-            >
-                <div
-                    class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
-                >
-                    <h1 class="mb-1 font-medium">Let's get started</h1>
-                    <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
-                        Laravel has an incredibly rich ecosystem. <br />We
-                        suggest starting with the following.
+    <Head title="Pool De Hockey" />
+
+    <div class="flex min-h-screen flex-col-reverse justify-end gap-x-16 lg:grid lg:grid-cols-2 lg:justify-normal lg:p-16">
+        <!-- Colonne gauche: Formulaire -->
+        <div class="flex min-h-[60vh] items-center justify-center py-16 lg:min-h-0">
+            <div class="block w-full max-w-lg">
+                <!-- En-tête -->
+                <div class="mb-8 text-center">
+                    <h1 class="text-3xl font-bold tracking-tight">
+                        {{ isLogin ? 'Bienvenue' : 'Créer un compte' }}
+                    </h1>
+                    <p class="mt-2 text-muted-foreground">
+                        {{ isLogin ? 'Connectez-vous pour gérer votre pool de hockey' : 'Rejoignez-nous pour participer au pool' }}
                     </p>
-                    <ul class="mb-4 flex flex-col lg:mb-6">
-                        <li
-                            class="relative flex items-center gap-4 py-2 before:absolute before:top-1/2 before:bottom-0 before:left-[0.4rem] before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A]"
-                        >
-                            <span
-                                class="relative bg-white py-1 dark:bg-[#161615]"
-                            >
-                                <span
-                                    class="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[#e3e3e0] bg-[#FDFDFC] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] dark:border-[#3E3E3A] dark:bg-[#161615]"
-                                >
-                                    <span
-                                        class="h-1.5 w-1.5 rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A]"
-                                    />
-                                </span>
-                            </span>
-                            <span>
-                                Read the
-                                <a
-                                    href="https://laravel.com/docs"
-                                    target="_blank"
-                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
-                                >
-                                    <span>Documentation</span>
-                                    <svg
-                                        width="{10}"
-                                        height="{11}"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-2.5 w-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                        <li
-                            class="relative flex items-center gap-4 py-2 before:absolute before:top-0 before:bottom-1/2 before:left-[0.4rem] before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A]"
-                        >
-                            <span
-                                class="relative bg-white py-1 dark:bg-[#161615]"
-                            >
-                                <span
-                                    class="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[#e3e3e0] bg-[#FDFDFC] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] dark:border-[#3E3E3A] dark:bg-[#161615]"
-                                >
-                                    <span
-                                        class="h-1.5 w-1.5 rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A]"
-                                    />
-                                </span>
-                            </span>
-                            <span>
-                                Watch video tutorials at
-                                <a
-                                    href="https://laracasts.com"
-                                    target="_blank"
-                                    class="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
-                                >
-                                    <span>Laracasts</span>
-                                    <svg
-                                        width="{10}"
-                                        height="{11}"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-2.5 w-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                    </ul>
-                    <ul class="flex gap-3 text-sm leading-normal">
-                        <li>
-                            <a
-                                href="https://cloud.laravel.com"
-                                target="_blank"
-                                class="inline-block rounded-sm border border-black bg-[#1b1b18] px-5 py-1.5 text-sm leading-normal text-white hover:border-black hover:bg-black dark:border-[#eeeeec] dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:border-white dark:hover:bg-white"
-                            >
-                                Deploy now
-                            </a>
-                        </li>
-                    </ul>
                 </div>
-                <div
-                    class="relative -mb-px aspect-335/376 w-full shrink-0 overflow-hidden rounded-t-lg bg-[#fff2f2] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]"
-                >
-                    <img
-                        src="/mcdavid-front.jpg"
-                        alt="McDavid"
-                        class="h-full w-full object-cover"
-                    />
+
+                <!-- Message de statut -->
+                <div v-if="status" class="mb-4 rounded-md bg-green-50 p-3 text-center text-sm font-medium text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                    {{ status }}
                 </div>
-            </main>
+
+                <!-- Toggle Login/Register -->
+                <div v-if="canRegister" class="mb-6 flex gap-2 rounded-lg bg-muted p-1">
+                    <button type="button" @click="isLogin = true" :class="['flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors', isLogin ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']">
+                        Connexion
+                    </button>
+                    <button type="button" @click="isLogin = false" :class="['flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors', !isLogin ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']">
+                        Inscription
+                    </button>
+                </div>
+
+                <!-- Formulaire de connexion -->
+                <Form v-if="isLogin" v-bind="loginStore.form()" :reset-on-success="['password']" v-slot="{ errors, processing }" class="flex flex-col gap-6">
+                    <div class="grid gap-6">
+                        <div class="grid gap-2">
+                            <Label for="email">Adresse courriel</Label>
+                            <Input id="email" type="email" name="email" required autofocus autocomplete="email" placeholder="votre@email.com" />
+                            <InputError :message="errors.email" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <div class="flex items-center justify-between">
+                                <Label for="password">Mot de passe</Label>
+                            </div>
+                            <Input id="password" type="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+                            <InputError :message="errors.password" />
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <Label for="remember" class="flex items-center">
+                                <Checkbox id="remember" name="remember" />
+                                <span>Se souvenir de moi</span>
+                            </Label>
+
+                            <TextLink v-if="canResetPassword" :href="passwordRequest()" class="text-sm"> Mot de passe oublié? </TextLink>
+                        </div>
+
+                        <Button type="submit" class="w-full" :disabled="processing">
+                            <Spinner v-if="processing" />
+                            Se connecter
+                        </Button>
+                    </div>
+                </Form>
+
+                <!-- Formulaire d'inscription -->
+                <Form v-else v-bind="registerStore.form()" :reset-on-success="['password', 'password_confirmation']" v-slot="{ errors, processing }" class="flex flex-col gap-6">
+                    <div class="grid gap-6">
+                        <div class="grid gap-2">
+                            <Label for="name">Nom complet</Label>
+                            <Input id="name" type="text" name="name" required autofocus autocomplete="name" placeholder="Votre nom" />
+                            <InputError :message="errors.name" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="email-register">Adresse courriel</Label>
+                            <Input id="email-register" type="email" name="email" required autocomplete="email" placeholder="votre@email.com" />
+                            <InputError :message="errors.email" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="password-register">Mot de passe</Label>
+                            <Input id="password-register" type="password" name="password" required autocomplete="new-password" placeholder="••••••••" />
+                            <InputError :message="errors.password" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="password_confirmation">Confirmer le mot de passe</Label>
+                            <Input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="••••••••" />
+                            <InputError :message="errors.password_confirmation" />
+                        </div>
+
+                        <Button type="submit" class="w-full" :disabled="processing">
+                            <Spinner v-if="processing" />
+                            Créer mon compte
+                        </Button>
+                    </div>
+                </Form>
+            </div>
         </div>
-        <div class="hidden h-14.5 lg:block"></div>
+
+        <!-- Colonne droite: Image -->
+        <div class="relative flex place-items-end pt-[120px]">
+            <img src="/mcdavid-front.jpg" alt="Connor McDavid" class="absolute h-full w-full object-cover object-top lg:rounded-2xl" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent lg:rounded-2xl"></div>
+            <div class="relative z-10 m-6 w-full rounded-xl bg-white/20 p-6 text-white shadow-2xl backdrop-blur-lg backdrop-saturate-150 md:pt-6">
+                <h2 class="text-4xl font-bold drop-shadow-lg">Pool de Hockey</h2>
+                <p class="mt-2 text-lg text-white/90 drop-shadow-md">Gérez votre pool et suivez vos performances</p>
+            </div>
+        </div>
     </div>
 </template>

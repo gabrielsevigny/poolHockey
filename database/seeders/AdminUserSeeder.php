@@ -24,9 +24,9 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        // Assign admin role
-        if (! $admin->hasRole('admin')) {
-            $admin->assignRole('admin');
+        // Assign superAdmin role
+        if (! $admin->hasRole('superAdmin')) {
+            $admin->assignRole('superAdmin');
         }
 
         $this->command->info('Super admin user created/updated successfully (ID: '.$admin->id.')');

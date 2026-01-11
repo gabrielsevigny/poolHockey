@@ -1,27 +1,13 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import type { ColumnDef, SortingState } from '@tanstack/vue-table';
-import {
-    FlexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useVueTable,
-} from '@tanstack/vue-table';
+import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { computed, h, ref } from 'vue';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Pool } from '@/types';
 
 const props = defineProps<{
@@ -64,9 +50,7 @@ const statusOrder: Record<Pool['status'], number> = {
 
 // Filtrer et trier les données
 const data = computed(() => {
-    return [...props.pools].sort(
-        (a, b) => statusOrder[a.status] - statusOrder[b.status],
-    );
+    return [...props.pools].sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
 });
 
 // Définition des colonnes
@@ -78,28 +62,19 @@ const columns: ColumnDef<Pool>[] = [
                 Button,
                 {
                     variant: 'ghost',
-                    onClick: () =>
-                        column.toggleSorting(column.getIsSorted() === 'asc'),
+                    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
                 },
-                () => [
-                    'Nom du pool',
-                    h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-                ],
+                () => ['Nom du pool', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
             );
         },
-        cell: ({ row }) =>
-            h('div', { class: 'text-left font-bold' }, row.getValue('name')),
+        cell: ({ row }) => h('div', { class: 'text-left font-bold' }, row.getValue('name')),
     },
     {
         accessorKey: 'status',
         header: () => h('div', { class: 'text-left' }, 'Statut'),
         cell: ({ row }) => {
             const status = row.getValue('status') as Pool['status'];
-            return h(
-                Badge,
-                { class: statusClasses[status] },
-                () => statusLabels[status],
-            );
+            return h(Badge, { class: statusClasses[status] }, () => statusLabels[status]);
         },
     },
     {
@@ -109,21 +84,12 @@ const columns: ColumnDef<Pool>[] = [
                 Button,
                 {
                     variant: 'ghost',
-                    onClick: () =>
-                        column.toggleSorting(column.getIsSorted() === 'asc'),
+                    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
                 },
-                () => [
-                    'Participants',
-                    h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-                ],
+                () => ['Participants', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
             );
         },
-        cell: ({ row }) =>
-            h(
-                'div',
-                { class: 'text-left' },
-                row.getValue('participants_count'),
-            ),
+        cell: ({ row }) => h('div', { class: 'text-left' }, row.getValue('participants_count')),
     },
     {
         accessorKey: 'rule_setting',
@@ -132,17 +98,12 @@ const columns: ColumnDef<Pool>[] = [
                 Button,
                 {
                     variant: 'ghost',
-                    onClick: () =>
-                        column.toggleSorting(column.getIsSorted() === 'asc'),
+                    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
                 },
-                () => [
-                    'Type de règlement',
-                    h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-                ],
+                () => ['Type de règlement', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
             );
         },
-        cell: ({ row }) =>
-            h('div', { class: 'text-left' }, row.getValue('rule_setting')),
+        cell: ({ row }) => h('div', { class: 'text-left' }, row.getValue('rule_setting')),
     },
     {
         accessorKey: 'start_date',
@@ -151,13 +112,9 @@ const columns: ColumnDef<Pool>[] = [
                 Button,
                 {
                     variant: 'ghost',
-                    onClick: () =>
-                        column.toggleSorting(column.getIsSorted() === 'asc'),
+                    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
                 },
-                () => [
-                    'Date de début',
-                    h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-                ],
+                () => ['Date de début', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
             );
         },
         cell: ({ row }) => {
@@ -172,13 +129,9 @@ const columns: ColumnDef<Pool>[] = [
                 Button,
                 {
                     variant: 'ghost',
-                    onClick: () =>
-                        column.toggleSorting(column.getIsSorted() === 'asc'),
+                    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
                 },
-                () => [
-                    'Date de fin',
-                    h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-                ],
+                () => ['Date de fin', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
             );
         },
         cell: ({ row }) => {
@@ -200,10 +153,7 @@ const table = useVueTable({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: (updaterOrValue) => {
-        sorting.value =
-            typeof updaterOrValue === 'function'
-                ? updaterOrValue(sorting.value)
-                : updaterOrValue;
+        sorting.value = typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue;
     },
     state: {
         get sorting() {
@@ -223,19 +173,9 @@ const table = useVueTable({
         <div class="rounded-md border">
             <Table>
                 <TableHeader>
-                    <TableRow
-                        v-for="headerGroup in table.getHeaderGroups()"
-                        :key="headerGroup.id"
-                    >
-                        <TableHead
-                            v-for="header in headerGroup.headers"
-                            :key="header.id"
-                        >
-                            <FlexRender
-                                v-if="!header.isPlaceholder"
-                                :render="header.column.columnDef.header"
-                                :props="header.getContext()"
-                            />
+                    <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                        <TableHead v-for="header in headerGroup.headers" :key="header.id">
+                            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
                         </TableHead>
                     </TableRow>
                 </TableHeader>
@@ -249,25 +189,14 @@ const table = useVueTable({
                             class="cursor-pointer hover:bg-accent/50"
                             @click="navigateToPool(row.original.id)"
                         >
-                            <TableCell
-                                v-for="cell in row.getVisibleCells()"
-                                :key="cell.id"
-                            >
-                                <FlexRender
-                                    :render="cell.column.columnDef.cell"
-                                    :props="cell.getContext()"
-                                />
+                            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+                                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                             </TableCell>
                         </TableRow>
                     </template>
 
                     <TableRow v-else>
-                        <TableCell
-                            :colspan="columns.length"
-                            class="h-24 text-center"
-                        >
-                            Aucun résultat.
-                        </TableCell>
+                        <TableCell :colspan="columns.length" class="h-24 text-center"> Aucun résultat. </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
@@ -278,22 +207,8 @@ const table = useVueTable({
                 {{ table.getPageCount() }}
             </div>
             <div class="space-x-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!table.getCanPreviousPage()"
-                    @click="table.previousPage()"
-                >
-                    Précédent
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!table.getCanNextPage()"
-                    @click="table.nextPage()"
-                >
-                    Suivant
-                </Button>
+                <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()"> Précédent </Button>
+                <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()"> Suivant </Button>
             </div>
         </div>
     </div>

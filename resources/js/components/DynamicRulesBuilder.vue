@@ -1,21 +1,9 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Plus, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -91,18 +79,13 @@ const initFromModelValue = () => {
     maxPlayersPerUser.value = mv.player_limits?.max_per_user ?? 20;
 
     // Charger les limites par position si elles existent
-    if (
-        mv.player_limits?.by_position &&
-        Object.keys(mv.player_limits.by_position).length > 0
-    ) {
+    if (mv.player_limits?.by_position && Object.keys(mv.player_limits.by_position).length > 0) {
         isLimitedPlayers.value = true;
-        Object.entries(mv.player_limits.by_position).forEach(
-            ([pos, limits]) => {
-                if (positionLimits.value[pos]) {
-                    positionLimits.value[pos] = { ...limits };
-                }
-            },
-        );
+        Object.entries(mv.player_limits.by_position).forEach(([pos, limits]) => {
+            if (positionLimits.value[pos]) {
+                positionLimits.value[pos] = { ...limits };
+            }
+        });
     }
 };
 
@@ -130,30 +113,22 @@ const emitUpdate = () => {
         scoring_rules: scoringRules.value,
         player_limits: {
             max_per_user: Math.max(1, Math.min(50, maxPlayersPerUser.value)),
-            by_position:
-                Object.keys(by_position).length > 0 ? by_position : undefined,
+            by_position: Object.keys(by_position).length > 0 ? by_position : undefined,
         },
     });
 };
 
 /* ---------------------------- SCORING RULES ------------------------------ */
 
-const availableStats = computed(() =>
-    availableStatTypes.filter(
-        (stat) => !scoringRules.value.some((rule) => rule.type === stat.value),
-    ),
-);
+const availableStats = computed(() => availableStatTypes.filter((stat) => !scoringRules.value.some((rule) => rule.type === stat.value)));
 
 const addScoringRule = () => {
     if (!selectedStatType.value) return;
 
-    const statType = availableStatTypes.find(
-        (t) => t.value === selectedStatType.value,
-    );
+    const statType = availableStatTypes.find((t) => t.value === selectedStatType.value);
     if (!statType) return;
 
-    if (scoringRules.value.some((r) => r.type === selectedStatType.value))
-        return;
+    if (scoringRules.value.some((r) => r.type === selectedStatType.value)) return;
 
     scoringRules.value.push({
         type: selectedStatType.value,
@@ -187,78 +162,45 @@ watch(
         <Card>
             <CardHeader>
                 <CardTitle>Règles de pointage</CardTitle>
-                <CardDescription>
-                    Définissez les points attribués pour chaque statistique
-                </CardDescription>
+                <CardDescription> Définissez les points attribués pour chaque statistique </CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
                 <div class="flex gap-2">
                     <div class="flex-1">
                         <Select v-model="selectedStatType">
                             <SelectTrigger>
-                                <SelectValue
-                                    placeholder="Sélectionner une statistique..."
-                                />
+                                <SelectValue placeholder="Sélectionner une statistique..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem
-                                    v-for="stat in availableStats"
-                                    :key="stat.value"
-                                    :value="stat.value"
-                                >
+                                <SelectItem v-for="stat in availableStats" :key="stat.value" :value="stat.value">
                                     {{ stat.label }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <Button
-                        @click="addScoringRule"
-                        :disabled="!selectedStatType"
-                    >
+                    <Button @click="addScoringRule" :disabled="!selectedStatType">
                         <Plus class="mr-2 h-4 w-4" />
                         Ajouter
                     </Button>
                 </div>
 
                 <div v-if="scoringRules.length > 0" class="space-y-2">
-                    <div
-                        v-for="(rule, index) in scoringRules"
-                        :key="rule.type"
-                        class="flex items-center gap-3 rounded-lg border bg-muted/50 p-3"
-                    >
+                    <div v-for="(rule, index) in scoringRules" :key="rule.type" class="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
                         <div class="flex-1 font-medium">{{ rule.label }}</div>
 
                         <div class="flex items-center gap-2">
-                            <Input
-                                v-model.number="rule.points"
-                                type="number"
-                                min="0"
-                                class="w-20 text-center"
-                            />
-                            <span class="text-sm text-muted-foreground"
-                                >pts</span
-                            >
+                            <Input v-model.number="rule.points" type="number" min="0" class="w-20 text-center" />
+                            <span class="text-sm text-muted-foreground">pts</span>
                         </div>
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            type="button"
-                            @click="removeScoringRule(index)"
-                            class="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
-                        >
+                        <Button variant="ghost" size="icon" type="button" @click="removeScoringRule(index)" class="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950">
                             <X class="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
 
-                <p
-                    v-else
-                    class="py-4 text-center text-sm text-muted-foreground"
-                >
-                    Aucune règle de pointage. Ajoutez-en une ci-dessus.
-                </p>
+                <p v-else class="py-4 text-center text-sm text-muted-foreground">Aucune règle de pointage. Ajoutez-en une ci-dessus.</p>
             </CardContent>
         </Card>
 
@@ -268,10 +210,7 @@ watch(
                 <div class="grid grid-cols-3">
                     <div class="col-span-2">
                         <CardTitle>Limites de joueurs</CardTitle>
-                        <CardDescription>
-                            Configurez le nombre maximum de joueurs par
-                            utilisateur
-                        </CardDescription>
+                        <CardDescription> Configurez le nombre maximum de joueurs par utilisateur </CardDescription>
                     </div>
                     <div class="col-span-1 flex justify-end">
                         <Switch v-model="isLimitedPlayers" />
@@ -282,36 +221,19 @@ watch(
             <CardContent v-if="isLimitedPlayers" class="space-y-6">
                 <div class="space-y-2">
                     <Label>Joueurs maximum par utilisateur</Label>
-                    <Input
-                        v-model.number="maxPlayersPerUser"
-                        type="number"
-                        min="1"
-                        max="50"
-                        class="max-w-xs"
-                    />
-                    <p class="text-xs text-muted-foreground">
-                        Nombre total de joueurs qu'un utilisateur peut
-                        sélectionner
-                    </p>
+                    <Input v-model.number="maxPlayersPerUser" type="number" min="1" max="50" class="max-w-xs" />
+                    <p class="text-xs text-muted-foreground">Nombre total de joueurs qu'un utilisateur peut sélectionner</p>
                 </div>
 
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
-                        <Label class="text-base font-semibold"
-                            >Limites par position</Label
-                        >
+                        <Label class="text-base font-semibold">Limites par position</Label>
                     </div>
 
                     <div class="space-y-2">
-                        <div
-                            v-for="position in availablePositions"
-                            :key="position.value"
-                            class="flex items-center gap-4 rounded-lg border bg-muted/50 p-3"
-                        >
+                        <div v-for="position in availablePositions" :key="position.value" class="flex items-center gap-4 rounded-lg border bg-muted/50 p-3">
                             <div class="flex flex-1 items-center gap-3">
-                                <div
-                                    class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 font-bold text-primary"
-                                >
+                                <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 font-bold text-primary">
                                     {{ position.shortLabel }}
                                 </div>
                                 <div class="flex-1">
@@ -323,41 +245,18 @@ watch(
 
                             <div class="flex items-center gap-3">
                                 <div class="flex items-center gap-2">
-                                    <Label class="text-xs text-muted-foreground"
-                                        >Min</Label
-                                    >
-                                    <Input
-                                        v-model.number="
-                                            positionLimits[position.value].min
-                                        "
-                                        type="number"
-                                        min="0"
-                                        max="20"
-                                        class="w-16 text-center"
-                                    />
+                                    <Label class="text-xs text-muted-foreground">Min</Label>
+                                    <Input v-model.number="positionLimits[position.value].min" type="number" min="0" max="20" class="w-16 text-center" />
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <Label class="text-xs text-muted-foreground"
-                                        >Max</Label
-                                    >
-                                    <Input
-                                        v-model.number="
-                                            positionLimits[position.value].max
-                                        "
-                                        type="number"
-                                        min="0"
-                                        max="20"
-                                        class="w-16 text-center"
-                                    />
+                                    <Label class="text-xs text-muted-foreground">Max</Label>
+                                    <Input v-model.number="positionLimits[position.value].max" type="number" min="0" max="20" class="w-16 text-center" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <p class="text-xs text-muted-foreground">
-                        Laissez à 0 pour aucune limite. Pour forcer un nombre
-                        exact, mettez la même valeur dans Min et Max.
-                    </p>
+                    <p class="text-xs text-muted-foreground">Laissez à 0 pour aucune limite. Pour forcer un nombre exact, mettez la même valeur dans Min et Max.</p>
                 </div>
             </CardContent>
         </Card>

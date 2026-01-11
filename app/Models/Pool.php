@@ -55,6 +55,14 @@ class Pool extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /**
+     * Get the invitations for this pool.
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(PoolInvitation::class);
+    }
+
     protected function casts(): array
     {
         return [

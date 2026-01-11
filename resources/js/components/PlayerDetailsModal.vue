@@ -2,14 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import axios from 'axios';
@@ -86,51 +79,24 @@ const handleOpenChange = (value: boolean) => {
         <DialogContent v-if="player" class="sm:max-w-[600px]">
             <DialogHeader>
                 <DialogTitle>Détails du joueur</DialogTitle>
-                <DialogDescription>
-                    Statistiques de la saison en cours
-                </DialogDescription>
+                <DialogDescription> Statistiques de la saison en cours </DialogDescription>
             </DialogHeader>
 
             <div class="space-y-4">
                 <!-- Player Header -->
                 <div class="flex items-start space-x-4">
-                    <img
-                        :src="player.headshot_url"
-                        :alt="player.full_name"
-                        class="h-24 w-24 rounded-full border-2 bg-muted object-cover"
-                        @error="
-                            (e) =>
-                                ((e.target as HTMLImageElement).src =
-                                    '/favicon.svg')
-                        "
-                    />
+                    <img :src="player.headshot_url" :alt="player.full_name" class="h-24 w-24 rounded-full border-2 bg-muted object-cover" @error="(e) => ((e.target as HTMLImageElement).src = '/favicon.svg')" />
                     <div class="flex-1">
                         <h3 class="text-2xl font-bold">
                             {{ player.full_name }}
                         </h3>
                         <div class="mt-2 flex items-center gap-2">
-                            <Badge variant="secondary">{{
-                                player.position
-                            }}</Badge>
-                            <Badge
-                                v-if="!player.is_available"
-                                variant="destructive"
-                            >
-                                Indisponible
-                            </Badge>
+                            <Badge variant="secondary">{{ player.position }}</Badge>
+                            <Badge v-if="!player.is_available" variant="destructive"> Indisponible </Badge>
                         </div>
-                        <p class="mt-2 text-sm text-muted-foreground">
-                            {{ player.team_name }} ({{ player.team_abbrev }})
-                        </p>
-                        <p class="mt-1 text-sm font-semibold text-primary">
-                            {{ player.games_in_pool }} matchs dans ce pool
-                        </p>
-                        <p
-                            v-if="!player.is_available"
-                            class="mt-1 text-sm text-destructive"
-                        >
-                            Sélectionné par {{ player.selected_by }}
-                        </p>
+                        <p class="mt-2 text-sm text-muted-foreground">{{ player.team_name }} ({{ player.team_abbrev }})</p>
+                        <p class="mt-1 text-sm font-semibold text-primary">{{ player.games_in_pool }} matchs dans ce pool</p>
+                        <p v-if="!player.is_available" class="mt-1 text-sm text-destructive">Sélectionné par {{ player.selected_by }}</p>
                     </div>
                 </div>
 
@@ -149,9 +115,7 @@ const handleOpenChange = (value: boolean) => {
 
                     <Card>
                         <CardContent class="p-4">
-                            <p class="text-sm text-muted-foreground">
-                                Matchs joués
-                            </p>
+                            <p class="text-sm text-muted-foreground">Matchs joués</p>
                             <p class="text-3xl font-bold">
                                 {{ player.games_played }}
                             </p>
@@ -177,18 +141,13 @@ const handleOpenChange = (value: boolean) => {
                     <Card v-if="player.plus_minus !== undefined">
                         <CardContent class="p-4">
                             <p class="text-sm text-muted-foreground">+/-</p>
-                            <p class="text-3xl font-bold">
-                                {{ player.plus_minus > 0 ? '+' : ''
-                                }}{{ player.plus_minus }}
-                            </p>
+                            <p class="text-3xl font-bold">{{ player.plus_minus > 0 ? '+' : '' }}{{ player.plus_minus }}</p>
                         </CardContent>
                     </Card>
 
                     <Card v-if="player.penalty_minutes !== undefined">
                         <CardContent class="p-4">
-                            <p class="text-sm text-muted-foreground">
-                                Minutes de pénalité
-                            </p>
+                            <p class="text-sm text-muted-foreground">Minutes de pénalité</p>
                             <p class="text-3xl font-bold">
                                 {{ player.penalty_minutes }}
                             </p>
@@ -205,26 +164,15 @@ const handleOpenChange = (value: boolean) => {
                     <Card v-if="player.shooting_pct !== undefined">
                         <CardContent class="p-4">
                             <p class="text-sm text-muted-foreground">% Tirs</p>
-                            <p class="text-3xl font-bold">
-                                {{ player.shooting_pct.toFixed(1) }}%
-                            </p>
+                            <p class="text-3xl font-bold">{{ player.shooting_pct.toFixed(1) }}%</p>
                         </CardContent>
                     </Card>
                 </div>
             </div>
 
             <DialogFooter>
-                <Button
-                    variant="outline"
-                    @click="handleOpenChange(false)"
-                    :disabled="isSubmitting"
-                >
-                    Annuler
-                </Button>
-                <Button
-                    @click="handleAddPlayer"
-                    :disabled="!player.is_available || isSubmitting"
-                >
+                <Button variant="outline" @click="handleOpenChange(false)" :disabled="isSubmitting"> Annuler </Button>
+                <Button @click="handleAddPlayer" :disabled="!player.is_available || isSubmitting">
                     <Spinner v-if="isSubmitting" class="mr-2 h-4 w-4" />
                     {{ isSubmitting ? 'Ajout...' : 'Ajouter à mon équipe' }}
                 </Button>
